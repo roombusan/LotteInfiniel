@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>문현동 롯데캐슬인피니엘</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #fff;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #5B4ED8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+    }
+
+    .header-back {
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      margin-right: 2px;
+    }
+
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .header-call {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 12px 5px 9px;
+      white-space: nowrap;
+    }
+
+    .header-call .call-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .header-call .call-text {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ── Map container ───────────────── */
+    #map-container {
+      width: 100%;
+      position: relative;
+      background: #ccc;
+      overflow: hidden;
+    }
+
+    #site-plan {
+      width: 100%;
+      display: block;
+    }
+
+    #site-plan-fallback {
+      display: none;
+      width: 100%;
+      padding: 100px 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #888;
+      background: #f0f0f0;
+      line-height: 1.8;
+    }
+
+    /* ── 지도 위 탭 오버레이 ─────────── */
+    #map-overlay-tabs {
+      position: absolute;
+      top: 12px;
+      left: 3px;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 14px;
+      padding: 9px 11px 8px;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.18);
+      min-width: 175px;
+    }
+
+    #areaTabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+
+    #txnTabsRow {
+      display: flex;
+      gap: 2px;
+      justify-content: flex-end;
+      margin-bottom: 6px;
+    }
+
+    .area-tab {
+      padding: 5px 13px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #999;
+      background: transparent;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .area-tab.active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    /* 2행: 서브타입(왼쪽) + 가격(오른쪽) */
+    #overlay-bottom {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    /* 서브타입 탭 열 */
+    #subtypeTabs {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+    }
+
+    .subtype-tab {
+      padding: 5px 13px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    /* 비활성 — 공통 회색 */
+    .subtype-tab {
+      color: #aaa;
+      background: #f0f0f2;
+      border-color: #e0e0e2;
+    }
+
+    /* 59A 활성 — 보라 */
+    .subtype-tab[data-subtype="59A"].active {
+      color: #fff;
+      background: #5B4ED8;
+      border-color: #5B4ED8;
+      box-shadow: 0 2px 8px rgba(91, 78, 216, 0.4);
+    }
+
+    /* 59B 활성 — 파랑 */
+    .subtype-tab[data-subtype="59B"].active {
+      color: #fff;
+      background: #1890FF;
+      border-color: #1890FF;
+      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.4);
+    }
+
+    /* 84 활성 — 코랄 */
+    .subtype-tab[data-subtype="84"].active {
+      color: #fff;
+      background: #E8603A;
+      border-color: #E8603A;
+      box-shadow: 0 2px 8px rgba(232, 96, 58, 0.4);
+    }
+
+    .subtype-single {
+      font-size: 12px;
+      font-weight: 700;
+      color: #555;
+      padding: 2px 0;
+    }
+
+    /* ── 마커 레이어 ─────────────────── */
+    #markers-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Building marker ─────────────── */
+    @keyframes heartbeat {
+      0% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1);
+      }
+
+      14% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1.18);
+      }
+
+      28% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1);
+      }
+
+      42% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1.10);
+      }
+
+      70% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1);
+      }
+
+      100% {
+        transform: translate(-50%, calc(-100% - 9px)) scale(1);
+      }
+    }
+
+    .bld-marker {
+      --marker-bg: #5B4ED8;
+      position: absolute;
+      transform: translate(-50%, calc(-100% - 9px));
+      background: var(--marker-bg);
+      color: white;
+      border-radius: 9px;
+      padding: 6px 12px;
+      text-align: center;
+      white-space: nowrap;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      line-height: 1.35;
+      cursor: pointer;
+      animation: heartbeat 1.6s ease-in-out infinite;
+    }
+
+    .bld-marker:active {
+      animation: none;
+      transform: translate(-50%, calc(-100% - 9px)) scale(0.92);
+    }
+
+    .bld-marker .dong {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .bld-marker .type {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .bld-marker .type.multi {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .bld-marker .t-label {
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .bld-marker .t-sep {
+      font-size: 11px;
+      opacity: 0.6;
+    }
+
+    .bld-marker::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 9px solid transparent;
+      border-top: 9px solid var(--marker-bg);
+      border-bottom: none;
+    }
+
+    /* 화살표 위쪽 마커 */
+    .bld-marker.arrow-up {
+      transform: translate(-50%, 9px);
+    }
+
+    .bld-marker.arrow-up:active {
+      transform: translate(-50%, 9px) scale(0.92);
+    }
+
+    @keyframes heartbeat-up {
+      0% {
+        transform: translate(-50%, 9px) scale(1);
+      }
+
+      14% {
+        transform: translate(-50%, 9px) scale(1.18);
+      }
+
+      28% {
+        transform: translate(-50%, 9px) scale(1);
+      }
+
+      42% {
+        transform: translate(-50%, 9px) scale(1.10);
+      }
+
+      70% {
+        transform: translate(-50%, 9px) scale(1);
+      }
+
+      100% {
+        transform: translate(-50%, 9px) scale(1);
+      }
+    }
+
+    .bld-marker.arrow-up {
+      animation: heartbeat-up 1.6s ease-in-out infinite;
+    }
+
+    .bld-marker.arrow-up::after {
+      bottom: auto;
+      top: -9px;
+      border-top: none;
+      border-bottom: 9px solid var(--marker-bg);
+    }
+
+    /* ── 단지 정보 ───────────────────── */
+    .danji-info {
+      background: #fff;
+      padding: 16px 16px 4px;
+    }
+
+    .danji-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 3px;
+    }
+
+    .danji-addr {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 14px;
+    }
+
+    .danji-stats {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .stat-item {
+      flex: 1;
+      background: #f7f7f9;
+      border-radius: 10px;
+      padding: 10px 0;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .danji-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding-bottom: 16px;
+    }
+
+    .dtag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #f0eeff;
+      color: #5B4ED8;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .dtag .ti {
+      font-size: 14px;
+    }
+
+    /* ── 오버레이 내 거래유형 탭 + 가격 범위 ── */
+    .txn-tab {
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #aaa;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+
+    .txn-tab.active-sale {
+      background: #5B4ED8;
+      color: #fff;
+    }
+
+    .txn-tab.active-lease {
+      background: #2E9B87;
+      color: #fff;
+    }
+
+    .txn-tab.active-rent {
+      background: #E07D3C;
+      color: #fff;
+    }
+
+    #priceRange {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 5px;
+      padding-top: 1px;
+    }
+
+    .pr-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .pr-label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .pr-val {
+      font-size: 13px;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+
+    .pr-empty {
+      font-size: 12px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    /* ── Bottom ──────────────────────── */
+    .view-btn-wrap {
+      padding: 4px 16px 32px;
+    }
+
+    .view-btn {
+      width: 100%;
+      padding: 15px;
+      border: 1.5px solid #5B4ED8;
+      border-radius: 10px;
+      color: #5B4ED8;
+      background: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .view-btn:active {
+      background: #f4f2ff;
+    }
+
+    /* 평면도 섹션 */
+    .floor-plan-section {
+      padding: 0 16px 28px;
+    }
+    .floor-plan-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+    }
+    .floor-plan-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .fp-tab {
+      padding: 7px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #aaa;
+      border: none;
+    }
+    .fp-tab.active-59A { background: #5B4ED8; color: #fff; }
+    .fp-tab.active-59B { background: #1890FF; color: #fff; }
+    .fp-tab.active-84  { background: #E8603A; color: #fff; }
+    .floor-plan-img-wrap {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f7f7f9;
+    }
+    .floor-plan-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ──────────────────────────── -->
+  <div class="header">
+    <div class="header-back">‹</div>
+    <div class="header-title">롯데캐슬인피니엘 매물리스트</div>
+    <a class="header-call" href="tel:010-6402-2328">
+      <span class="call-icon">📞</span>
+      <span class="call-text">바로 문의</span>
+    </a>
+  </div>
+
+  <!-- ── Map (헤더 바로 아래) ──────────────── -->
+  <div id="map-container">
+    <img id="site-plan" src="danji.jpg" alt="단지 배치도"
+      onerror="this.style.display='none'; document.getElementById('site-plan-fallback').style.display='block';">
+    <div id="site-plan-fallback">
+      📂 <strong>danji.jpg</strong> 파일을<br>이 폴더에 저장해주세요
+    </div>
+
+    <!-- 지도 좌상단 탭 오버레이 -->
+    <div id="map-overlay-tabs">
+      <div id="areaTabs">
+        <div class="area-tab active" data-area="all">전체</div>
+        <div class="area-tab" data-area="25">25평</div>
+        <div class="area-tab" data-area="35">34평</div>
+      </div>
+      <div id="txnTabsRow">
+        <div class="txn-tab active-sale" data-txn="sale">매매</div>
+        <div class="txn-tab" data-txn="lease">전세</div>
+        <div class="txn-tab" data-txn="rent">월세</div>
+      </div>
+      <div id="overlay-bottom">
+        <div id="subtypeTabs"></div>
+        <div id="priceRange"></div>
+      </div>
+    </div>
+
+    <div id="markers-layer"></div>
+  </div>
+
+  <!-- ── 전체 매물 버튼 ────────────────────── -->
+  <div class="view-btn-wrap">
+    <button class="view-btn" onclick="location.href='danji.html'">이 단지 전체 매물 보기</button>
+  </div>
+
+  <!-- ── 평면도 ────────────────────────────── -->
+  <div class="floor-plan-section">
+    <div class="floor-plan-title">평면도</div>
+    <div class="floor-plan-tabs">
+      <button class="fp-tab active-59A" data-fp="59A" onclick="selectFloorPlan('59A')">59A</button>
+      <button class="fp-tab" data-fp="59B" onclick="selectFloorPlan('59B')">59B</button>
+      <button class="fp-tab" data-fp="84" onclick="selectFloorPlan('84')">84</button>
+    </div>
+    <div class="floor-plan-img-wrap">
+      <img id="floor-plan-img" src="59A.jpg" alt="59A 평면도">
+    </div>
+  </div>
+
+  <!-- ── 단지 정보 ─────────────────────────── -->
+  <div class="danji-info">
+    <div class="danji-name">롯데캐슬 인피니엘</div>
+    <div class="danji-addr">부산시 남구 문현동 295-1번지 일원</div>
+
+    <div class="danji-stats">
+      <div class="stat-item">
+        <div class="stat-val">715세대</div>
+        <div class="stat-label">총 세대수</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">786대</div>
+        <div class="stat-label">주차대수</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val">1.10대</div>
+        <div class="stat-label">세대당 주차</div>
+      </div>
+    </div>
+
+    <div class="danji-tags">
+      <div class="dtag"><span class="ti">🚇</span> 문현역 도보 5분</div>
+      <div class="dtag"><span class="ti">🏫</span> 문현초 인근</div>
+      <div class="dtag"><span class="ti">🏥</span> 인근 병원 다수</div>
+      <div class="dtag"><span class="ti">🛒</span> 롯데마트 인근</div>
+      <div class="dtag"><span class="ti">🌳</span> 단지 내 공원</div>
+      <div class="dtag"><span class="ti">🔒</span> 24시 경비</div>
+    </div>
+
+  </div>
+
+  <script>
+    // y값: 기존 위치에서 161px 위로 이동 (161/1920 ≈ 8.4% 감소)
+    const buildings = [
+      { id: 101, types: ['59A'], x: 80, y: 16 },
+      { id: 102, types: ['59A'], x: 62, y: 25 },
+      { id: 103, types: ['59A', '84'], x: 80, y: 45, arrowUp: true },
+      { id: 104, types: ['59A'], x: 78, y: 70, arrowUp: true },
+      { id: 105, types: ['59A', '59B'], x: 45, y: 55 },
+      { id: 106, types: ['59A', '59B'], x: 25, y: 65 },
+      { id: 107, types: ['59A', '59B', '84'], x: 43, y: 80 },
+      { id: 108, types: ['59A', '59B'], x: 60, y: 90, arrowUp: true },
+    ];
+
+    const SUBTYPE_COLOR = { '59A': '#5B4ED8', '59B': '#1890FF', '84': '#E8603A' };
+
+    const areaConfig = {
+      'all': { subtypes: ['59A', '59B', '84'] },
+      '25': { subtypes: ['59A', '59B'] },
+      '35': { subtypes: ['84'] },
+    };
+
+    let currentArea = 'all';
+    let currentSubtype = '59A';
+
+    function renderMarkers() {
+      const layer = document.getElementById('markers-layer');
+      layer.innerHTML = '';
+
+      const validSubtypes = areaConfig[currentArea].subtypes;
+
+      buildings.forEach(b => {
+        if (!b.types.includes(currentSubtype)) return;
+        if (!validSubtypes.includes(currentSubtype)) return;
+
+        const el = document.createElement('div');
+        el.className = 'bld-marker' + (b.arrowUp ? ' arrow-up' : '');
+        el.style.left = b.x + '%';
+        el.style.top = b.y + '%';
+        el.style.setProperty('--marker-bg', SUBTYPE_COLOR[currentSubtype] || '#5B4ED8');
+        el.innerHTML =
+          `<div class="dong">${b.id}동</div>` +
+          `<div class="type">${currentSubtype}</div>`;
+        el.addEventListener('click', () => { location.href = `detail.html?dong=${b.id}`; });
+        layer.appendChild(el);
+      });
+    }
+
+    function renderSubtabs() {
+      const container = document.getElementById('subtypeTabs');
+      container.innerHTML = '';
+
+      const subtypes = areaConfig[currentArea].subtypes;
+
+      // currentSubtype이 이 평수에서 유효하지 않으면 첫 번째로 초기화
+      if (!subtypes.includes(currentSubtype)) currentSubtype = subtypes[0];
+
+      subtypes.forEach(st => {
+        const tab = document.createElement('div');
+        tab.className = 'subtype-tab' + (currentSubtype === st ? ' active' : '');
+        tab.dataset.subtype = st;
+        tab.textContent = st;
+        tab.addEventListener('click', () => {
+          container.querySelectorAll('.subtype-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentSubtype = st;
+          renderMarkers();
+          updatePriceRange();
+        });
+        container.appendChild(tab);
+      });
+
+      renderMarkers();
+      updatePriceRange();
+    }
+
+    document.querySelectorAll('.area-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.area-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentArea = tab.dataset.area;
+        if (currentArea === '25' && !['59A', '59B'].includes(currentSubtype)) currentSubtype = '59A';
+        if (currentArea === '35') currentSubtype = '84';
+        renderSubtabs();
+      });
+    });
+
+    // ── 거래유형 탭 + 가격 범위 ─────────────────────────────
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4fD6cOg4-utmMUse3ZnG2umK2a6-k9xj6rj6Dda5AuhQ8w3eyzZqDtQyM58sLVHVTkoWDQI94UbDK/pub?output=csv';
+
+    function parseNum(s, zeroAsNull = false) {
+      if (s == null || s === '' || s === '#REF!') return null;
+      const n = parseInt(String(s).replace(/,/g, ''), 10);
+      if (isNaN(n)) return null;
+      if (zeroAsNull && n === 0) return null;
+      return n;
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (const ch of lines[i]) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        if (cols.length < 9) continue;
+        let gbn = cols[0];
+        if (gbn.includes('매매') && gbn.includes('전세')) gbn = '매매+전세';
+        const type = (cols[5] && cols[5] !== '#REF!') ? cols[5] : (cols[9] && cols[9] !== '#REF!' ? cols[9] : null);
+        if (!type) continue;
+        rows.push({ gbn, type, total: parseNum(cols[8], true), jeonse: parseNum(cols[7], true) });
+      }
+      return rows;
+    }
+
+    let allListings = [];
+
+    function fmtMan(v) {
+      return v.toLocaleString() + '만원';
+    }
+
+    let currentTxn = 'sale';
+
+    function updatePriceRange() {
+      const box = document.getElementById('priceRange');
+
+      if (currentTxn === 'rent') {
+        box.innerHTML = '<div class="pr-empty">매물 준비 중</div>';
+        return;
+      }
+
+      let prices = [];
+      if (currentTxn === 'sale') {
+        prices = allListings
+          .filter(x => x.type === currentSubtype && (x.gbn.includes('매매') || x.gbn === '반반') && x.total != null)
+          .map(x => x.total);
+      } else {
+        prices = allListings
+          .filter(x => x.type === currentSubtype && x.jeonse != null)
+          .map(x => x.jeonse);
+      }
+
+      if (prices.length === 0) {
+        box.innerHTML = '<div class="pr-empty">매물 없음</div>';
+        return;
+      }
+
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      box.innerHTML = `
+        <div class="pr-row">
+          <span class="pr-label">최저가</span>
+          <span class="pr-val">${fmtMan(min)}</span>
+        </div>
+        <div class="pr-row">
+          <span class="pr-label">최고가</span>
+          <span class="pr-val">${fmtMan(max)}</span>
+        </div>
+      `;
+    }
+
+    document.querySelectorAll('.txn-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.txn-tab').forEach(t => { t.className = 'txn-tab'; });
+        currentTxn = tab.dataset.txn;
+        tab.className = `txn-tab active-${currentTxn}`;
+        updatePriceRange();
+      });
+    });
+
+    (async function init() {
+      try {
+        const resp = await fetch(CSV_URL);
+        const text = await resp.text();
+        allListings = parseCSV(text);
+      } catch (e) {
+        document.getElementById('priceRange').innerHTML = '<div class="pr-empty">데이터 오류</div>';
+      }
+      renderSubtabs();
+    })();
+
+    // 평면도 탭 선택
+    function selectFloorPlan(type) {
+      const colorMap = { '59A': 'active-59A', '59B': 'active-59B', '84': 'active-84' };
+      document.querySelectorAll('.fp-tab').forEach(btn => {
+        btn.className = 'fp-tab' + (btn.dataset.fp === type ? ' ' + colorMap[type] : '');
+      });
+      document.getElementById('floor-plan-img').src = type + '.jpg';
+      document.getElementById('floor-plan-img').alt = type + ' 평면도';
+    }
+  </script>
+</body>
+
+</html>

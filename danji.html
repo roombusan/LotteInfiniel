@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>매물 리스트 — 롯데캐슬인피니엘</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f7f7f9;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #5B4ED8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-back { font-size: 24px; cursor: pointer; margin-right: 8px; line-height: 1; }
+    .header-title { flex: 1; font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-call {
+      display: flex; align-items: center; gap: 5px;
+      text-decoration: none; color: white;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 5px 12px 5px 9px;
+      white-space: nowrap;
+    }
+    .header-call .call-text { font-size: 13px; font-weight: 700; }
+
+    /* ── Dong selector ──────────────── */
+    .dong-btn {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #e0e0e2;
+      background: #f7f7f9;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      max-width: 100%;
+    }
+    .dong-btn.has-selection {
+      border-color: #5B4ED8;
+      background: #f0eeff;
+      color: #5B4ED8;
+    }
+    .dong-btn-arrow { font-size: 10px; opacity: 0.5; flex-shrink: 0; }
+    .dong-btn-text  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .dong-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 16px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+      padding: 8px;
+      z-index: 200;
+      min-width: 200px;
+    }
+    .dong-panel.open { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dong-chip {
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #888;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dong-chip.selected { background: #5B4ED8; color: #fff; }
+    .dong-chip[data-dong="all"].selected { background: #1a1a1a; }
+
+    /* ── Filter tabs ─────────────────── */
+    .filter-bar {
+      background: #fff;
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 49px;
+      z-index: 91;
+      overflow: visible;
+    }
+    .f-tab {
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #888;
+      transition: all 0.15s;
+    }
+    .f-tab.active-all   { background: #1a1a1a; color: #fff; }
+    .f-tab.active-sale  { background: #5B4ED8; color: #fff; }
+    .f-tab.active-lease { background: #2E9B87; color: #fff; }
+
+    /* ── Type filter bar ─────────────────── */
+    .type-bar {
+      background: #fff;
+      padding: 8px 16px 10px;
+      display: flex;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 92px;
+      z-index: 89;
+    }
+    .t-tab {
+      padding: 5px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #aaa;
+      transition: all 0.15s;
+    }
+    .t-tab.active-tall  { background: #1a1a1a; color: #fff; }
+    .t-tab.active-t59A  { background: #5B4ED8; color: #fff; }
+    .t-tab.active-t59B  { background: #1890FF; color: #fff; }
+    .t-tab.active-t84   { background: #E8603A; color: #fff; }
+
+    .sort-select {
+      margin-left: auto;
+      padding: 5px 8px;
+      border-radius: 10px;
+      border: 1.5px solid #e0e0e2;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      background: #f7f7f9;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+      padding-right: 22px;
+    }
+
+    /* ── Count bar ───────────────────── */
+    .count-bar {
+      padding: 10px 16px 6px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    /* ── Card list ───────────────────── */
+    .card-list { padding: 0 12px 40px; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border-left: 4px solid transparent;
+      transition: transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card:active { transform: scale(0.98); }
+    .card.c-sale  { border-left-color: #5B4ED8; }
+    .card.c-lease { border-left-color: #2E9B87; }
+    .card.c-rent  { border-left-color: #E07D3C; }
+    .card.c-mixed { border-left-color: #9C4ED8; }
+
+    /* Left info */
+    .card-left { flex: 1; min-width: 0; }
+
+    .card-row1 { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+
+    .dong-badge {
+      background: #f0eeff; color: #5B4ED8;
+      border-radius: 6px; padding: 2px 8px;
+      font-size: 12px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .floor-text { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .type-badge {
+      border-radius: 5px; padding: 2px 7px;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .type-badge.t59A { background: #f0eeff; color: #5B4ED8; }
+    .type-badge.t59B { background: #daeeff; color: #1278CC; }
+    .type-badge.t84  { background: #fff0ec; color: #C43D1A; }
+
+    .card-row2 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+    .txn-badge {
+      border-radius: 5px; padding: 2px 9px;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .txn-badge.sale  { background: #ede9ff; color: #5B4ED8; }
+    .txn-badge.lease { background: #e0f5f1; color: #2E9B87; }
+    .txn-badge.rent  { background: #fdf0e6; color: #E07D3C; }
+
+    /* Right price */
+    .card-right { text-align: right; flex-shrink: 0; }
+    .price-main { font-size: 16px; font-weight: 800; line-height: 1.25; }
+    .price-main.p-sale  { color: #5B4ED8; }
+    .price-main.p-lease { color: #2E9B87; }
+    .price-sub { font-size: 11px; color: #2E9B87; font-weight: 600; margin-top: 2px; }
+
+    .empty { text-align: center; padding: 60px 20px; color: #bbb; font-size: 14px; }
+
+    /* ── Popup overlay ───────────────── */
+    #popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    #popup-overlay.show { display: flex; }
+
+    /* ── Popup box ───────────────────── */
+    #popup-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px 22px 18px;
+      width: 288px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    }
+    .popup-title {
+      font-size: 15px; font-weight: 800; color: #1a1a1a;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .popup-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0;
+    }
+    .popup-label { font-size: 13px; color: #888; font-weight: 500; }
+    .popup-val   { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+    .popup-val.pos { color: #E07D3C; }
+    .popup-val.neg { color: #2E9B87; }
+    .popup-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+    .popup-total-row {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .popup-total-label { font-size: 13px; font-weight: 700; color: #555; }
+    .popup-total-val   { font-size: 18px; font-weight: 800; color: #5B4ED8; }
+    .popup-jeonse-wrap {
+      margin-top: 8px;
+      background: #e8f9f4; border-radius: 9px;
+      padding: 9px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .popup-jeonse-label { font-size: 12px; color: #2E9B87; font-weight: 600; }
+    .popup-jeonse-val   { font-size: 15px; color: #2E9B87; font-weight: 800; }
+    .popup-close {
+      width: 100%; margin-top: 16px;
+      padding: 11px; border-radius: 9px;
+      background: #f0eeff; color: #5B4ED8;
+      font-size: 14px; font-weight: 700;
+      border: none; cursor: pointer;
+    }
+    .popup-close:active { background: #e0d8ff; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-back" onclick="history.back()">‹</div>
+  <div class="header-title">롯데캐슬인피니엘 매물</div>
+  <a class="header-call" href="tel:010-6402-2328">
+    <span>📞</span>
+    <span class="call-text">바로 문의</span>
+  </a>
+</div>
+
+<div class="filter-bar" id="dong-bar">
+  <div class="f-tab active-all" data-filter="all">전체</div>
+  <div class="f-tab" data-filter="sale">매매</div>
+  <div class="f-tab" data-filter="lease">전세</div>
+  <button class="dong-btn" id="dong-btn">
+    <span class="dong-btn-text" id="dong-btn-text">동 선택</span>
+    <span class="dong-btn-arrow">▾</span>
+  </button>
+  <div class="dong-panel" id="dong-panel">
+    <div class="dong-chip selected" data-dong="all">전체</div>
+    <div class="dong-chip" data-dong="101">101동</div>
+    <div class="dong-chip" data-dong="102">102동</div>
+    <div class="dong-chip" data-dong="103">103동</div>
+    <div class="dong-chip" data-dong="104">104동</div>
+    <div class="dong-chip" data-dong="105">105동</div>
+    <div class="dong-chip" data-dong="106">106동</div>
+    <div class="dong-chip" data-dong="107">107동</div>
+    <div class="dong-chip" data-dong="108">108동</div>
+  </div>
+</div>
+<div class="type-bar">
+  <div class="t-tab active-tall" data-type="all">전체</div>
+  <div class="t-tab" data-type="59A">59A</div>
+  <div class="t-tab" data-type="59B">59B</div>
+  <div class="t-tab" data-type="84">84</div>
+  <select class="sort-select" id="sort-select">
+    <option value="">정렬 방식</option>
+    <option value="price-desc">금액 높은 순</option>
+    <option value="price-asc">금액 낮은 순</option>
+    <option value="floor-desc">층수 높은 순</option>
+    <option value="floor-asc">층수 낮은 순</option>
+  </select>
+</div>
+
+<div class="count-bar" id="count-bar"></div>
+<div class="card-list" id="card-list"></div>
+
+<!-- Popup -->
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div class="popup-title" id="popup-title"></div>
+    <div id="popup-content"></div>
+    <button class="popup-close" onclick="closePopup()">닫기</button>
+  </div>
+</div>
+
+<script>
+// ── 가격 포맷 (만원 → 억 표기) ────────────────────────────
+function fmt(manwon) {
+  if (manwon == null) return '-';
+  const n = parseInt(String(manwon).replace(/,/g, ''));
+  if (isNaN(n)) return '-';
+  const eok = Math.floor(n / 10000);
+  const rem  = n % 10000;
+  if (eok === 0) return `${rem.toLocaleString()}만`;
+  if (rem  === 0) return `${eok}억`;
+  return `${eok}억 ${rem.toLocaleString()}만`;
+}
+
+function fmtPremium(val) {
+  if (val == null) return '-';
+  const n = parseInt(String(val).replace(/,/g, ''));
+  if (isNaN(n)) return '-';
+  if (n === 0) return '0';
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${n.toLocaleString()}만`;
+}
+
+// ── 매물 데이터 (Google Sheets 기준, 단위: 만원) ───────────
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4fD6cOg4-utmMUse3ZnG2umK2a6-k9xj6rj6Dda5AuhQ8w3eyzZqDtQyM58sLVHVTkoWDQI94UbDK/pub?output=csv';
+
+function parseNum(s, zeroAsNull = false) {
+  if (s == null || s === '' || s === '#REF!') return null;
+  const n = parseInt(String(s).replace(/,/g, ''), 10);
+  if (isNaN(n)) return null;
+  if (zeroAsNull && n === 0) return null;
+  return n;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of lines[i]) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    if (cols.length < 9) continue;
+    let gbn = cols[0];
+    if (gbn.includes('매매') && gbn.includes('전세')) gbn = '매매+전세';
+    const type = (cols[5] && cols[5] !== '#REF!') ? cols[5] : (cols[9] && cols[9] !== '#REF!' ? cols[9] : null);
+    if (!type) continue;
+    rows.push({
+      gbn,
+      dong:  parseNum(cols[1]),
+      floor: parseNum(cols[2]),
+      type,
+      bun:   parseNum(cols[3]),
+      ext:   parseNum(cols[4]),
+      prem:  parseNum(cols[6]),
+      jeonse: parseNum(cols[7], true),
+      total:  parseNum(cols[8], true),
+    });
+  }
+  return rows;
+}
+
+let listings = [];
+
+// ── 필터 매칭 ─────────────────────────────────────────────
+function matchFilter(item, filter) {
+  if (filter === 'all')   return true;
+  if (filter === 'sale')  return item.gbn.includes('매매') || item.gbn === '반반';
+  if (filter === 'lease') return item.gbn.includes('전세');
+  return true;
+}
+
+// ── 카드 테마 결정 ────────────────────────────────────────
+function cardTheme(gbn) {
+  if (gbn === '매매+전세' || gbn === '반반') return 'mixed';
+  if (gbn.includes('매매')) return 'sale';
+  if (gbn.includes('전세')) return 'lease';
+  return 'rent';
+}
+
+let currentFilter = 'all';
+let currentType   = 'all';
+let currentSort   = '';
+let selectedDongs = new Set(); // 비어있으면 전체
+
+// ── 카드 렌더링 ───────────────────────────────────────────
+function renderCards() {
+  const list     = document.getElementById('card-list');
+  const countBar = document.getElementById('count-bar');
+  list.innerHTML = '';
+
+  const filtered = listings
+    .filter(item =>
+      matchFilter(item, currentFilter) &&
+      (currentType === 'all' || item.type === currentType) &&
+      (selectedDongs.size === 0 || selectedDongs.has(String(item.dong)))
+    )
+    .sort((a, b) => {
+      if (!currentSort) return 0;
+      const priceA = a.total ?? a.jeonse ?? 0;
+      const priceB = b.total ?? b.jeonse ?? 0;
+      if (currentSort === 'price-desc') return priceB - priceA;
+      if (currentSort === 'price-asc')  return priceA - priceB;
+      if (currentSort === 'floor-desc') return b.floor - a.floor;
+      if (currentSort === 'floor-asc')  return a.floor - b.floor;
+      return 0;
+    });
+  countBar.textContent = `총 ${filtered.length}건`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">매물이 없습니다</div>';
+    return;
+  }
+
+  filtered.forEach(item => {
+    const theme = cardTheme(item.gbn);
+    const hasSale  = item.gbn.includes('매매') || item.gbn === '반반';
+    const hasLease = !!item.jeonse;
+    const showSale  = hasSale  && currentFilter !== 'lease';
+    const showLease = hasLease && currentFilter !== 'sale';
+
+    // 오른쪽 가격 표시
+    let priceMain = '', priceMainClass = '', priceSub = '';
+    if (showSale && item.total) {
+      priceMain      = fmt(item.total);
+      priceMainClass = 'p-sale';
+      if (showLease) priceSub = `전세 ${fmt(item.jeonse)}`;
+    } else if (showLease) {
+      priceMain      = fmt(item.jeonse);
+      priceMainClass = 'p-lease';
+    }
+
+    // 거래 배지
+    let badges = '';
+    if (showSale) {
+      badges += `<span class="txn-badge sale">${item.gbn === '반반' ? '반반' : '매매'}</span>`;
+    }
+    if (showLease) {
+      badges += `<span class="txn-badge lease">전세</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = `card c-${theme}`;
+    card.innerHTML = `
+      <div class="card-left">
+        <div class="card-row1">
+          <span class="dong-badge">${item.dong}동</span>
+          <span class="floor-text">${item.floor}층</span>
+          <span class="type-badge t${item.type}">${item.type}형</span>
+        </div>
+        <div class="card-row2">${badges}</div>
+      </div>
+      <div class="card-right">
+        <div class="price-main ${priceMainClass}">${priceMain}</div>
+        ${priceSub ? `<div class="price-sub">${priceSub}</div>` : ''}
+      </div>
+    `;
+    card.addEventListener('click', () => openPopup(item));
+    list.appendChild(card);
+  });
+}
+
+// ── 팝업 열기 ─────────────────────────────────────────────
+function openPopup(item) {
+  const overlay = document.getElementById('popup-overlay');
+  const titleEl = document.getElementById('popup-title');
+  const content = document.getElementById('popup-content');
+
+  const typeColor = { '59A': '#5B4ED8', '59B': '#1278CC', '84': '#E8603A' };
+  const color = typeColor[item.type] || '#5B4ED8';
+
+  titleEl.innerHTML =
+    `<span style="color:${color}">${item.dong}동</span>` +
+    `<span>${item.floor}층</span>` +
+    `<span style="color:${color};font-size:12px;font-weight:700">${item.type}형</span>`;
+
+  const hasSale  = (item.gbn.includes('매매') || item.gbn === '반반') && currentFilter !== 'lease';
+  const hasLease = !!item.jeonse && currentFilter !== 'sale';
+
+  let html = '';
+
+  if (hasSale) {
+    if (item.bun) {
+      const premClass = item.prem > 0 ? 'pos' : (item.prem < 0 ? 'neg' : '');
+      html += `
+        <div class="popup-row">
+          <span class="popup-label">분양가</span>
+          <span class="popup-val">${fmt(item.bun)}</span>
+        </div>
+        <div class="popup-row">
+          <span class="popup-label">확장비</span>
+          <span class="popup-val">${fmt(item.ext)}</span>
+        </div>
+        <div class="popup-row">
+          <span class="popup-label">프리미엄</span>
+          <span class="popup-val ${premClass}">${fmtPremium(item.prem)}</span>
+        </div>
+        <hr class="popup-divider">
+        <div class="popup-total-row">
+          <span class="popup-total-label">총 매매가</span>
+          <span class="popup-total-val">${fmt(item.total)}</span>
+        </div>
+      `;
+    } else {
+      html += `
+        <hr class="popup-divider">
+        <div class="popup-total-row">
+          <span class="popup-total-label">총 매매가</span>
+          <span class="popup-total-val">${fmt(item.total)}</span>
+        </div>
+      `;
+    }
+  }
+
+  if (hasLease) {
+    html += `
+      <div class="popup-jeonse-wrap">
+        <span class="popup-jeonse-label">전세금</span>
+        <span class="popup-jeonse-val">${fmt(item.jeonse)}</span>
+      </div>
+    `;
+  }
+
+  if (!html) {
+    html = '<div style="color:#bbb;font-size:13px;padding:8px 0;text-align:center">상세 정보 없음</div>';
+  }
+
+  content.innerHTML = html;
+  overlay.classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('popup-overlay').classList.remove('show');
+}
+
+// 오버레이 배경 클릭 시 닫기
+document.getElementById('popup-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closePopup();
+});
+
+// ── 거래유형 탭 필터 ──────────────────────────────────────
+document.querySelectorAll('.f-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.f-tab').forEach(t => { t.className = 'f-tab'; });
+    tab.className = `f-tab active-${tab.dataset.filter}`;
+    currentFilter = tab.dataset.filter;
+    renderCards();
+  });
+});
+
+// ── 동 선택 ───────────────────────────────────────────────
+const dongBtn   = document.getElementById('dong-btn');
+const dongPanel = document.getElementById('dong-panel');
+const dongBtnText = document.getElementById('dong-btn-text');
+
+dongBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  dongPanel.classList.toggle('open');
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('dong-bar').contains(e.target)) {
+    dongPanel.classList.remove('open');
+  }
+});
+
+function updateDongBtn() {
+  if (selectedDongs.size === 0) {
+    dongBtnText.textContent = '동 선택';
+    dongBtn.classList.remove('has-selection');
+  } else {
+    const labels = [...selectedDongs].sort().map(d => d + '동');
+    dongBtnText.textContent = labels.join(' · ');
+    dongBtn.classList.add('has-selection');
+  }
+}
+
+document.querySelectorAll('.dong-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const val = chip.dataset.dong;
+    if (val === 'all') {
+      selectedDongs.clear();
+      document.querySelectorAll('.dong-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+    } else {
+      document.querySelector('.dong-chip[data-dong="all"]').classList.remove('selected');
+      chip.classList.toggle('selected');
+      if (chip.classList.contains('selected')) {
+        selectedDongs.add(val);
+      } else {
+        selectedDongs.delete(val);
+      }
+      if (selectedDongs.size === 0) {
+        document.querySelector('.dong-chip[data-dong="all"]').classList.add('selected');
+      }
+    }
+    updateDongBtn();
+    renderCards();
+  });
+});
+
+// ── 정렬 ──────────────────────────────────────────────────
+document.getElementById('sort-select').addEventListener('change', function() {
+  currentSort = this.value;
+  renderCards();
+});
+
+// ── 타입 탭 필터 ──────────────────────────────────────────
+document.querySelectorAll('.t-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.t-tab').forEach(t => { t.className = 't-tab'; });
+    currentType = tab.dataset.type;
+    tab.className = `t-tab active-t${currentType === 'all' ? 'all' : currentType}`;
+    renderCards();
+  });
+});
+
+(async function init() {
+  document.getElementById('card-list').innerHTML = '<div style="padding:30px;text-align:center;color:#aaa;">매물 불러오는 중...</div>';
+  try {
+    const resp = await fetch(CSV_URL);
+    const text = await resp.text();
+    listings = parseCSV(text);
+  } catch (e) {
+    document.getElementById('card-list').innerHTML = '<div style="padding:30px;text-align:center;color:#e00;">데이터를 불러오지 못했습니다.</div>';
+    return;
+  }
+  renderCards();
+})();
+</script>
+</body>
+</html>

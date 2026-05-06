@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>동호수 정보</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f7f7f9;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ─────────────────────── */
+    .header {
+      background: #5B4ED8;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-back {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 8px;
+      line-height: 1;
+    }
+
+    .header-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .header-call {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 5px 12px 5px 9px;
+      margin-left: 10px;
+      white-space: nowrap;
+    }
+
+    .header-call .call-text {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ── Legend ─────────────────────── */
+    .legend {
+      background: #fff;
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+
+    .leg {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .leg-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .leg-dot.t59a {
+      background: #f0f0f2;
+      border: 1px solid #ddd;
+    }
+
+    .leg-dot.t59b {
+      background: #daeeff;
+      border: 1px solid #b3d9f5;
+    }
+
+    .leg-dot.t84 {
+      background: #ffe6e0;
+      border: 1px solid #f5c5b5;
+    }
+
+    .leg-dot.sale {
+      background: #5B4ED8;
+    }
+
+    .leg-dot.lease {
+      background: #2E9B87;
+    }
+
+    .leg-dot.mixed {
+      background: linear-gradient(to right, #5B4ED8 50%, #2E9B87 50%);
+    }
+
+    .leg-sep {
+      color: #ddd;
+      font-size: 14px;
+      align-self: center;
+    }
+
+    /* ── Grid wrapper ───────────────── */
+    #grid-wrap {
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+    }
+
+    /* ── Grid table ─────────────────── */
+    #grid {
+      border-collapse: collapse;
+      min-width: 100%;
+      table-layout: fixed;
+    }
+
+    #grid thead th:first-child,
+    #grid tbody td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f5f5f7;
+    }
+
+    #grid thead th {
+      background: #f5f5f7;
+      font-size: 10px;
+      font-weight: 700;
+      color: #888;
+      text-align: center;
+      padding: 4px 2px;
+      border: 1px solid #e8e8ea;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+
+    #grid thead th:first-child {
+      width: 40px;
+      color: #666;
+    }
+
+    #grid tbody td {
+      border: 1px solid #e8e8ea;
+      text-align: center;
+      vertical-align: middle;
+      padding: 0;
+      height: 20px;
+      font-size: 10px;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    td.floor-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+      background: #f5f5f7 !important;
+      padding: 0 3px;
+      white-space: nowrap;
+    }
+
+    /* Type backgrounds */
+    td.type-59A {
+      background: #fafafa;
+      color: #bbb;
+    }
+
+    td.type-59B {
+      background: #daeeff;
+      color: #9ac9e8;
+    }
+
+    td.type-84 {
+      background: #ffe6e0;
+      color: #e8b4a0;
+    }
+
+    /* Beyond max floor */
+    td.beyond-max {
+      background: #ebebeb;
+    }
+
+    /* 매물 있는 호 셀 */
+    td.listing-sale {
+      background: #5B4ED8 !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
+    td.listing-lease {
+      background: #2E9B87 !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
+    td.listing-mixed {
+      background: linear-gradient(to right, #5B4ED8 50%, #2E9B87 50%) !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
+    td.listing-sale:active,
+    td.listing-lease:active,
+    td.listing-mixed:active {
+      opacity: 0.75;
+    }
+
+    .cell-gbn {
+      display: block;
+      font-size: 8px;
+      font-weight: 600;
+      opacity: 0.88;
+      line-height: 1.3;
+    }
+
+    .cell-price {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    /* Community space */
+    td.community {
+      background: #ececec;
+      color: #888;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    /* ── Popup ───────────────────────── */
+    #popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #popup-overlay.show {
+      display: flex;
+    }
+
+    #popup-box {
+      background: #fff;
+      border-radius: 16px;
+      width: 300px;
+      max-height: 72vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .popup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .popup-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1a1a1a;
+    }
+
+    .popup-x {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #aaa;
+      line-height: 1;
+      padding: 0 0 0 8px;
+    }
+
+    .popup-items {
+      padding: 14px 18px 18px;
+    }
+
+    .popup-item+.popup-item {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .popup-badges {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .txn-badge {
+      border-radius: 5px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .txn-badge.sale {
+      background: #ede9ff;
+      color: #5B4ED8;
+    }
+
+    .txn-badge.lease {
+      background: #e0f5f1;
+      color: #2E9B87;
+    }
+
+    .type-badge {
+      border-radius: 5px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .type-badge.t59A {
+      background: #f0eeff;
+      color: #5B4ED8;
+    }
+
+    .type-badge.t59B {
+      background: #daeeff;
+      color: #1278CC;
+    }
+
+    .type-badge.t84 {
+      background: #fff0ec;
+      color: #C43D1A;
+    }
+
+    .popup-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .popup-label {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .popup-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .popup-val.pos {
+      color: #E07D3C;
+    }
+
+    .popup-val.neg {
+      color: #2E9B87;
+    }
+
+    .popup-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #e0e0e0;
+    }
+
+    .popup-total-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .popup-total-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #5B4ED8;
+    }
+
+    .popup-jeonse {
+      margin-top: 8px;
+      background: #e8f9f4;
+      border-radius: 9px;
+      padding: 9px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .popup-jeonse-label {
+      font-size: 12px;
+      color: #2E9B87;
+      font-weight: 600;
+    }
+
+    .popup-jeonse-val {
+      font-size: 15px;
+      color: #2E9B87;
+      font-weight: 800;
+    }
+
+    .popup-close-wrap {
+      padding: 0 18px 16px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .popup-close {
+      flex: 1;
+      padding: 11px;
+      border-radius: 9px;
+      border: none;
+      background: #f0eeff;
+      color: #5B4ED8;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .popup-close:active {
+      background: #e0d8ff;
+    }
+
+    .popup-call {
+      flex: 1;
+      padding: 11px;
+      border-radius: 9px;
+      border: none;
+      background: #5B4ED8;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .popup-call:active {
+      background: #4a3fc0;
+    }
+
+    /* ── Filter bar ─────────────────── */
+    #filter-bar {
+      background: #fff;
+      padding: 8px 14px;
+      display: flex;
+      gap: 7px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 49px;
+      z-index: 90;
+    }
+    .f-tab {
+      padding: 5px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f0f0f2;
+      color: #aaa;
+      border: none;
+      transition: all 0.15s;
+    }
+    .f-tab.active-all   { background: #1a1a1a; color: #fff; }
+    .f-tab.active-sale  { background: #5B4ED8; color: #fff; }
+    .f-tab.active-lease { background: #2E9B87; color: #fff; }
+
+    /* ── Bottom button ──────────────── */
+    .bottom-bar {
+      padding: 14px 16px 32px;
+      background: #fff;
+      border-top: 1px solid #eee;
+    }
+
+    .view-btn {
+      width: 100%;
+      padding: 15px;
+      border: 1.5px solid #5B4ED8;
+      border-radius: 10px;
+      color: #5B4ED8;
+      background: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .view-btn:active {
+      background: #f4f2ff;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="header-back" onclick="history.back()">‹</div>
+    <div class="header-title" id="pageTitle">—</div>
+    <div class="header-sub" id="pageSub"></div>
+    <a class="header-call" href="tel:010-6402-2328">
+      <span>📞</span>
+      <span class="call-text">바로 문의</span>
+    </a>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div id="filter-bar">
+    <button class="f-tab active-all" data-filter="all">전체</button>
+    <button class="f-tab" data-filter="sale">매매</button>
+    <button class="f-tab" data-filter="lease">전세</button>
+  </div>
+
+  <div id="grid-wrap">
+    <table id="grid">
+      <thead>
+        <tr id="grid-head"></tr>
+      </thead>
+      <tbody id="grid-body"></tbody>
+    </table>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="view-btn" id="viewBtn">이 동 매물 보기</button>
+  </div>
+
+  <!-- 팝업 -->
+  <div id="popup-overlay">
+    <div id="popup-box">
+      <div class="popup-header">
+        <div class="popup-title" id="popup-title"></div>
+        <button class="popup-x" onclick="closePopup()">✕</button>
+      </div>
+      <div class="popup-items" id="popup-items"></div>
+      <div class="popup-close-wrap">
+        <button class="popup-close" onclick="closePopup()">닫기</button>
+        <a class="popup-call" href="tel:010-6402-2328">📞 바로 문의</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── 가격 포맷 (만원 → 억 표기) ────────────────────────────
+    function fmt(v) {
+      if (v == null) return '-';
+      const n = parseInt(String(v).replace(/,/g, ''));
+      if (isNaN(n)) return '-';
+      const eok = Math.floor(n / 10000);
+      const rem = n % 10000;
+      if (eok === 0) return `${rem.toLocaleString()}만`;
+      if (rem === 0) return `${eok}억`;
+      return `${eok}억 ${rem.toLocaleString()}만`;
+    }
+
+    // 셀 내 짧은 가격 표시 (e.g. 5.1억)
+    function fmtShort(v) {
+      if (v == null) return '';
+      const n = parseInt(String(v).replace(/,/g, ''));
+      if (isNaN(n) || n === 0) return '';
+      return (n / 10000).toFixed(1) + '억';
+    }
+
+    function fmtPremium(v) {
+      if (v == null) return '-';
+      const n = parseInt(String(v).replace(/,/g, ''));
+      if (isNaN(n)) return '-';
+      if (n === 0) return '0';
+      return `${n > 0 ? '+' : ''}${n.toLocaleString()}만`;
+    }
+
+    // ── 동별 건물 설정 ────────────────────────────────────────
+    const buildings = {
+      101: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 13, 2: 23, 3: 23, 4: 22, 5: 8 },
+        getType: () => '59A',
+        dirs: { 1: '남동향', 2: '남서향', 3: '남서향', 4: '남서향', 5: '남서향' },
+        special: {},
+      },
+      102: {
+        units: [1, 2],
+        maxFloorByUnit: { 1: 25, 2: 25 },
+        getType: () => '59A',
+        dirs: { 1: '남동향', 2: '남동향' },
+        special: {},
+      },
+      103: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 24, 2: 24, 3: 23, 4: 24, 5: 12 },
+        getType: (u) => u <= 2 ? '84' : '59A',
+        dirs: { 1: '남서향', 2: '남서향', 3: '남서향', 4: '남서향', 5: '남동향' },
+        special: { '1-2': '경로당' },
+      },
+      104: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 23, 2: 24, 3: 24, 4: 24, 5: 1 },
+        getType: () => '59A',
+        dirs: { 1: '남서향', 2: '남서향', 3: '남서향', 4: '남서향', 5: '남동향' },
+        special: {},
+      },
+      105: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 25, 2: 25, 3: 25, 4: 22, 5: 21 },
+        getType: (u) => u === 4 ? '59B' : '59A',
+        dirs: { 1: '남동향', 2: '남동향', 3: '남동향', 4: '남동향', 5: '남서향' },
+        special: { '1-1': '어린이집' },
+      },
+      106: {
+        units: [1, 2, 3],
+        maxFloorByUnit: { 1: 25, 2: 25, 3: 25 },
+        getType: (u) => u === 2 ? '59B' : '59A',
+        dirs: { 1: '남동향', 2: '남동향', 3: '남서향' },
+        special: {},
+      },
+      107: {
+        units: [1, 2, 3, 4, 5],
+        maxFloorByUnit: { 1: 23, 2: 24, 3: 24, 4: 21, 5: 24 },
+        getType: (u) => {
+          if (u <= 2) return '84';
+          if (u === 4) return '59B';
+          return '59A';
+        },
+        dirs: { 1: '남동향', 2: '남동향', 3: '남동향', 4: '남동향', 5: '남서향' },
+        special: {},
+      },
+      108: {
+        units: [1, 2, 3],
+        maxFloorByUnit: { 1: 10, 2: 23, 3: 23 },
+        getType: (u) => u === 2 ? '59B' : '59A',
+        dirs: { 1: '남동향', 2: '남동향', 3: '남동향' },
+        special: {},
+      },
+    };
+
+    // ── 구글 시트 매물 데이터 (동 → 층 → 매물 배열) ───────────
+    // dir: 스프레드시트의 방향 값 ('남동' or '남서')
+    const listingsData = {
+      101: {
+        1: [
+          { gbn: '매매', type: '59A', dir: '남서', bun: 49680, ext: 1760, prem: -700, jeonse: null, total: 50740 },
+          { gbn: '매매', type: '59A', dir: '남서', bun: 49680, ext: 1760, prem: 0, jeonse: null, total: 51440 },
+        ],
+        3: [{ gbn: '매매', type: '59A', dir: '남서', bun: 51170, ext: 1760, prem: 500, jeonse: null, total: 53430 }],
+        8: [{ gbn: '매매', type: '59A', dir: '남동', bun: 54150, ext: 1760, prem: 5000, jeonse: null, total: 60910 }],
+        10: [{ gbn: '매매+전세', type: '59A', dir: '남서', bun: 54850, ext: 1760, prem: 1000, jeonse: 35000, total: 57610 }],
+        13: [{ gbn: '매매', type: '59A', dir: '남동', bun: 55910, ext: 1760, prem: 1000, jeonse: null, total: 58670 }],
+        21: [{ gbn: '매매', type: '59A', dir: '남서', bun: 58710, ext: 1760, prem: 0, jeonse: null, total: 60470 }],
+      },
+      102: {
+        2: [
+          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
+          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
+          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
+        ],
+        24: [{ gbn: '매매', type: '59A', dir: '남동', bun: 59760, ext: 1760, prem: 500, jeonse: null, total: 62020 }],
+      },
+      103: {
+        2: [{ gbn: '전세', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: null, jeonse: 35000, total: null }],
+      },
+      104: {
+        2: [{ gbn: '매매', type: '59A', dir: '남서', bun: 50420, ext: 1760, prem: 2000, jeonse: null, total: 54180 }],
+      },
+      105: {
+        11: [{ gbn: '전세', type: '59B', dir: '남동', bun: 54310, ext: 1760, prem: null, jeonse: 34000, total: null }],
+        18: [{ gbn: '매매', type: '59B', dir: '남동', bun: 56740, ext: 1760, prem: 2000, jeonse: null, total: 60500 }],
+      },
+      106: {
+        2: [{ gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: -1000, jeonse: null, total: 51180 }],
+        5: [{ gbn: '반반', type: '59B', dir: '남동', bun: 51520, ext: 1760, prem: 200, jeonse: null, total: 53480 }],
+        16: [{ gbn: '전세', type: '59A', dir: '남동', bun: null, ext: null, prem: null, jeonse: 35000, total: null }],
+      },
+      107: {
+        1: [{ gbn: '매매+전세', type: '84', dir: '남동', bun: 67370, ext: 2180, prem: 1000, jeonse: 45000, total: 70550 }],
+        4: [{ gbn: '매매', type: '59B', dir: '남동', bun: 50930, ext: 2350, prem: 500, jeonse: null, total: 53780 }],
+        6: [{ gbn: '매매', type: '59B', dir: '남동', bun: 52010, ext: 1760, prem: 500, jeonse: null, total: 54270 }],
+        8: [{ gbn: '매매', type: '59B', dir: '남동', bun: 52990, ext: 1760, prem: 0, jeonse: null, total: 54750 }],
+        9: [{ gbn: '매매', type: '59B', dir: '남동', bun: 53480, ext: 1760, prem: 0, jeonse: null, total: 55240 }],
+        16: [{ gbn: '전세', type: '84', dir: '남동', bun: null, ext: null, prem: null, jeonse: 43000, total: null }],
+      },
+      108: {
+        12: [{ gbn: '매매', type: '59B', dir: '남동', bun: 54660, ext: 1760, prem: 2000, jeonse: null, total: 58420 }],
+        14: [{ gbn: '전세', type: '59B', dir: '남동', bun: 55360, ext: 1760, prem: null, jeonse: 34000, total: null }],
+        21: [{ gbn: '매매', type: '59B', dir: '남동', bun: 57770, ext: 1760, prem: 2000, jeonse: null, total: 61530 }],
+        23: [{ gbn: '매매', type: '59B', dir: '남동', bun: 58450, ext: 1760, prem: 1000, jeonse: null, total: 61210 }],
+      },
+    };
+
+    // ── 타입 배경 클래스 ──────────────────────────────────────
+    const TYPE_CLASS = { '59A': 'type-59A', '59B': 'type-59B', '84': 'type-84' };
+
+    // ── URL 파라미터로 동 결정 ────────────────────────────────
+    const params = new URLSearchParams(location.search);
+    const dong = parseInt(params.get('dong') || '101');
+    const config = buildings[dong] || buildings[101];
+
+    // ── 헤더 설정 ────────────────────────────────────────────
+    document.getElementById('pageTitle').textContent = `${dong}동`;
+    const presentTypes = [...new Set(config.units.map(u => config.getType(u)))];
+    document.getElementById('pageSub').textContent = presentTypes.join(' · ');
+    document.getElementById('viewBtn').textContent = `전체 매물 보기`;
+    document.getElementById('viewBtn').onclick = () => { location.href = 'danji.html'; };
+
+    // ── 범례 생성 ────────────────────────────────────────────
+    (function buildLegend() {
+      const el = document.getElementById('legend');
+      const items = [];
+
+      if (presentTypes.includes('59A')) items.push({ cls: 't59a', label: '59A형' });
+      if (presentTypes.includes('59B')) items.push({ cls: 't59b', label: '59B형' });
+      if (presentTypes.includes('84')) items.push({ cls: 't84', label: '84형' });
+
+      items.push({ sep: true });
+      items.push({ cls: 'sale', label: '매매' });
+      items.push({ cls: 'lease', label: '전세' });
+      items.push({ cls: 'mixed', label: '매매+전세' });
+
+      items.forEach(item => {
+        if (item.sep) {
+          const s = document.createElement('span');
+          s.className = 'leg-sep';
+          s.textContent = '|';
+          el.appendChild(s);
+          return;
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'leg';
+        wrap.innerHTML = `<span class="leg-dot ${item.cls}"></span>${item.label}`;
+        el.appendChild(wrap);
+      });
+    })();
+
+    // ── 필터 상태 ─────────────────────────────────────────────
+    let currentFilter = 'all';
+
+    // ── 그리드 생성 (필터 적용, 재호출 가능) ─────────────────
+    function buildGrid() {
+      const overallMaxFloor = Math.max(...config.units.map(u => config.maxFloorByUnit[u]));
+      const unitWidth       = Math.floor((480 - 44) / config.units.length);
+      const dongListings    = listingsData[dong] || {};
+
+      // 헤더는 최초 1회만 생성
+      const headRow = document.getElementById('grid-head');
+      if (!headRow.hasChildNodes()) {
+        const floorTh = document.createElement('th');
+        floorTh.textContent = '층';
+        floorTh.style.width = '40px';
+        headRow.appendChild(floorTh);
+
+        config.units.forEach(u => {
+          const th   = document.createElement('th');
+          const dir  = config.dirs && config.dirs[u] ? config.dirs[u] : '';
+          const type = config.getType(u);
+          th.innerHTML  = `${u}호 <span style="color:#b0a8e0">${type}</span>${dir ? `<br><span style="font-size:7px;font-weight:400;color:#bbb">${dir}</span>` : ''}`;
+          th.style.width = unitWidth + 'px';
+          headRow.appendChild(th);
+        });
+      }
+
+      // 바디는 필터 변경 때마다 재생성
+      const tbody = document.getElementById('grid-body');
+      tbody.innerHTML = '';
+
+      for (let floor = overallMaxFloor; floor >= 1; floor--) {
+        const floorListings = dongListings[floor] || [];
+        const tr = document.createElement('tr');
+
+        const floorTd = document.createElement('td');
+        floorTd.className   = 'floor-label';
+        floorTd.textContent = floor + 'F';
+        tr.appendChild(floorTd);
+
+        config.units.forEach(u => {
+          const td = document.createElement('td');
+
+          if (floor > config.maxFloorByUnit[u]) {
+            td.className = 'beyond-max';
+            tr.appendChild(td);
+            return;
+          }
+
+          const specialKey = `${floor}-${u}`;
+          if (config.special && config.special[specialKey]) {
+            td.className   = 'community';
+            td.textContent = config.special[specialKey];
+            tr.appendChild(td);
+            return;
+          }
+
+          // 타입+방향 일치하는 매물 찾기
+          const matched = floorListings.filter(listing =>
+            config.getType(u) === listing.type &&
+            config.dirs[u] && config.dirs[u].startsWith(listing.dir)
+          );
+
+          // 현재 필터 적용
+          const filtered = matched.filter(item => {
+            if (currentFilter === 'all')   return true;
+            if (currentFilter === 'sale')  return item.gbn.includes('매매') || item.gbn === '반반';
+            if (currentFilter === 'lease') return !!item.jeonse || item.gbn.includes('전세');
+            return true;
+          });
+
+          if (filtered.length > 0) {
+            const hasSale  = filtered.some(i => i.gbn.includes('매매') || i.gbn === '반반');
+            const hasLease = filtered.some(i => !!i.jeonse || i.gbn.includes('전세'));
+
+            // 필터 모드에서 강제 단일 유형
+            let cellClass, gbnLabel, priceItem;
+            if (currentFilter === 'sale' || (hasSale && !hasLease)) {
+              cellClass = 'listing-sale';
+              gbnLabel  = filtered.length === 1 && filtered[0].gbn === '반반' ? '반반' : '매매';
+              priceItem = filtered.find(i => i.total) || filtered[0];
+              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.total);
+            } else if (currentFilter === 'lease' || (!hasSale && hasLease)) {
+              cellClass = 'listing-lease';
+              gbnLabel  = '전세';
+              priceItem = filtered.find(i => i.jeonse) || filtered[0];
+              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.jeonse);
+            } else {
+              cellClass = 'listing-mixed';
+              gbnLabel  = filtered.length === 1 && filtered[0].gbn === '매매+전세' ? '매+전' : '매+전';
+              priceItem = filtered[0];
+              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.total);
+            }
+
+            td.className = cellClass;
+            td.innerHTML = `<span class="cell-gbn">${gbnLabel}</span><span class="cell-price">${priceText}</span>`;
+            td.addEventListener('click', () => openPopup(floor, u, filtered));
+          } else {
+            td.className   = TYPE_CLASS[config.getType(u)];
+            td.textContent = floor;
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    buildGrid();
+
+    // ── 필터 탭 이벤트 ───────────────────────────────────────
+    document.querySelectorAll('#filter-bar .f-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentFilter = tab.dataset.filter;
+        document.querySelectorAll('#filter-bar .f-tab').forEach(t => {
+          t.className = 'f-tab';
+        });
+        tab.className = `f-tab active-${currentFilter}`;
+        buildGrid();
+      });
+    });
+
+    // ── 팝업 ─────────────────────────────────────────────────
+    function openPopup(floor, unit, items) {
+      const overlay = document.getElementById('popup-overlay');
+      const titleEl = document.getElementById('popup-title');
+      const itemsEl = document.getElementById('popup-items');
+
+      const count = items.length;
+      titleEl.textContent = `${dong}동 ${floor}층 ${unit}호 매물${count > 1 ? ' ' + count + '건' : ''}`;
+
+      itemsEl.innerHTML = '';
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'popup-item';
+
+        const hasSale = (item.gbn.includes('매매') || item.gbn === '반반') && currentFilter !== 'lease';
+        const hasLease = !!item.jeonse && currentFilter !== 'sale';
+
+        let badgesHtml = '<div class="popup-badges">';
+        if (hasSale) badgesHtml += `<span class="txn-badge sale">${item.gbn === '반반' ? '반반' : '매매'}</span>`;
+        if (hasLease) badgesHtml += `<span class="txn-badge lease">전세</span>`;
+        badgesHtml += `<span class="type-badge t${item.type}">${item.type}형</span>`;
+        badgesHtml += '</div>';
+
+        let bodyHtml = '';
+
+        if (hasSale && item.bun != null) {
+          const pc = item.prem > 0 ? 'pos' : (item.prem < 0 ? 'neg' : '');
+          bodyHtml += `
+        <div class="popup-row">
+          <span class="popup-label">분양가</span>
+          <span class="popup-val">${fmt(item.bun)}</span>
+        </div>
+        <div class="popup-row">
+          <span class="popup-label">확장비</span>
+          <span class="popup-val">${fmt(item.ext)}</span>
+        </div>
+        <div class="popup-row">
+          <span class="popup-label">프리미엄</span>
+          <span class="popup-val ${pc}">${fmtPremium(item.prem)}</span>
+        </div>
+        <div class="popup-total">
+          <span class="popup-total-label">총 매매가</span>
+          <span class="popup-total-val">${fmt(item.total)}</span>
+        </div>
+      `;
+        } else if (hasSale && item.total) {
+          bodyHtml += `
+        <div class="popup-total">
+          <span class="popup-total-label">총 매매가</span>
+          <span class="popup-total-val">${fmt(item.total)}</span>
+        </div>
+      `;
+        }
+
+        if (hasLease) {
+          bodyHtml += `
+        <div class="popup-jeonse">
+          <span class="popup-jeonse-label">전세금</span>
+          <span class="popup-jeonse-val">${fmt(item.jeonse)}</span>
+        </div>
+      `;
+        }
+
+        div.innerHTML = badgesHtml + bodyHtml;
+        itemsEl.appendChild(div);
+      });
+
+      overlay.classList.add('show');
+    }
+
+    function closePopup() {
+      document.getElementById('popup-overlay').classList.remove('show');
+    }
+
+    document.getElementById('popup-overlay').addEventListener('click', function (e) {
+      if (e.target === this) closePopup();
+    });
+  </script>
+</body>
+
+</html>
