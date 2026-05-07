@@ -233,9 +233,19 @@
       padding: 2px 1px;
     }
 
+    td.listing-rent {
+      background: #E07D3C !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
     td.listing-sale:active,
     td.listing-lease:active,
-    td.listing-mixed:active {
+    td.listing-mixed:active,
+    td.listing-rent:active {
       opacity: 0.75;
     }
 
@@ -765,16 +775,18 @@
         const type = (cols[5] && cols[5] !== '#REF!') ? cols[5] : (cols[9] && cols[9] !== '#REF!' ? cols[9] : null);
         if (!type) continue;
 
+        const dir = cols[10] ? cols[10].replace('향', '') : '';
+        if (!data[dongVal]) data[dongVal] = {};
+        if (!data[dongVal][floorVal]) data[dongVal][floorVal] = [];
         if (isWolse) {
           const parts = (cols[7] || '').split('/');
-          const deposit = parseManWon(parts[0]);
-          const rent    = parseNum(parts[1]);
-          if (!wolse[dongVal]) wolse[dongVal] = [];
-          wolse[dongVal].push({ type, floorLabel: floorRaw, deposit, rent });
+          data[dongVal][floorVal].push({
+            gbn: '월세', type, dir,
+            deposit: parseManWon(parts[0]),
+            rent:    parseNum(parts[1]),
+            bun: null, ext: null, prem: null, jeonse: null, total: null,
+          });
         } else {
-          const dir = cols[10] ? cols[10].replace('향', '') : '';
-          if (!data[dongVal]) data[dongVal] = {};
-          if (!data[dongVal][floorVal]) data[dongVal][floorVal] = [];
           data[dongVal][floorVal].push({
             gbn, type, dir,
             bun:    parseNum(cols[3]),
@@ -903,30 +915,36 @@
             if (currentFilter === 'all')   return true;
             if (currentFilter === 'sale')  return item.gbn.includes('매매') || item.gbn === '반반';
             if (currentFilter === 'lease') return !!item.jeonse || item.gbn.includes('전세');
+            if (currentFilter === 'rent')  return item.gbn === '월세';
             return true;
           });
 
           if (filtered.length > 0) {
             const hasSale  = filtered.some(i => i.gbn.includes('매매') || i.gbn === '반반');
             const hasLease = filtered.some(i => !!i.jeonse || i.gbn.includes('전세'));
+            const hasRent  = filtered.some(i => i.gbn === '월세');
 
-            // 필터 모드에서 강제 단일 유형
-            let cellClass, gbnLabel, priceItem;
-            if (currentFilter === 'sale' || (hasSale && !hasLease)) {
+            let cellClass, gbnLabel, priceItem, priceText;
+            if (currentFilter === 'rent' || (hasRent && !hasSale && !hasLease)) {
+              cellClass = 'listing-rent';
+              gbnLabel  = '월세';
+              priceItem = filtered.find(i => i.rent) || filtered[0];
+              priceText = filtered.length > 1 ? filtered.length + '건' : (priceItem.rent ? priceItem.rent.toLocaleString() + '만' : '-');
+            } else if (currentFilter === 'sale' || (hasSale && !hasLease && !hasRent)) {
               cellClass = 'listing-sale';
               gbnLabel  = filtered.length === 1 && filtered[0].gbn === '반반' ? '반반' : '매매';
               priceItem = filtered.find(i => i.total) || filtered[0];
-              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.total);
-            } else if (currentFilter === 'lease' || (!hasSale && hasLease)) {
+              priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.total);
+            } else if (currentFilter === 'lease' || (!hasSale && hasLease && !hasRent)) {
               cellClass = 'listing-lease';
               gbnLabel  = '전세';
               priceItem = filtered.find(i => i.jeonse) || filtered[0];
-              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.jeonse);
+              priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.jeonse);
             } else {
               cellClass = 'listing-mixed';
-              gbnLabel  = filtered.length === 1 && filtered[0].gbn === '매매+전세' ? '매+전' : '매+전';
+              gbnLabel  = filtered.length + '건';
               priceItem = filtered[0];
-              var priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.total);
+              priceText = '';
             }
 
             td.className = cellClass;
@@ -1032,13 +1050,7 @@
           t.className = 'f-tab';
         });
         tab.className = `f-tab active-${currentFilter}`;
-        if (currentFilter === 'rent') {
-          document.getElementById('grid-wrap').style.display = 'none';
-        } else {
-          document.getElementById('grid-wrap').style.display = '';
-          buildGrid();
-        }
-        renderWolse();
+        buildGrid();
       });
     });
 
@@ -1056,16 +1068,31 @@
         const div = document.createElement('div');
         div.className = 'popup-item';
 
-        const hasSale = (item.gbn.includes('매매') || item.gbn === '반반') && currentFilter !== 'lease';
-        const hasLease = !!item.jeonse && currentFilter !== 'sale';
+        const isRent   = item.gbn === '월세';
+        const hasSale  = !isRent && (item.gbn.includes('매매') || item.gbn === '반반') && currentFilter !== 'lease' && currentFilter !== 'rent';
+        const hasLease = !isRent && !!item.jeonse && currentFilter !== 'sale' && currentFilter !== 'rent';
 
         let badgesHtml = '<div class="popup-badges">';
+        if (isRent)  badgesHtml += `<span class="txn-badge" style="background:#fde8d8;color:#E07D3C">월세</span>`;
         if (hasSale) badgesHtml += `<span class="txn-badge sale">${item.gbn === '반반' ? '반반' : '매매'}</span>`;
         if (hasLease) badgesHtml += `<span class="txn-badge lease">전세</span>`;
         badgesHtml += `<span class="type-badge t${item.type}">${item.type}형</span>`;
         badgesHtml += '</div>';
 
         let bodyHtml = '';
+
+        if (isRent) {
+          bodyHtml += `
+            <div class="popup-jeonse" style="background:#fdf0e6">
+              <span class="popup-jeonse-label" style="color:#E07D3C">보증금</span>
+              <span class="popup-jeonse-val" style="color:#E07D3C">${fmt(item.deposit)}</span>
+            </div>
+            <div class="popup-jeonse" style="background:#fdf0e6;margin-top:6px">
+              <span class="popup-jeonse-label" style="color:#E07D3C">월세</span>
+              <span class="popup-jeonse-val" style="color:#E07D3C">월 ${(item.rent ?? 0).toLocaleString()}만원</span>
+            </div>
+          `;
+        }
 
         if (hasSale && item.bun != null) {
           const pc = item.prem > 0 ? 'pos' : (item.prem < 0 ? 'neg' : '');

@@ -880,15 +880,13 @@
       const max = Math.max(...prices);
 
       if (currentTxn === 'rent') {
-        const deposits = allListings
-          .filter(x => x.type === currentSubtype && x.gbn === '월세' && x.deposit != null)
-          .map(x => x.deposit);
-        const dMin = deposits.length ? Math.min(...deposits) : null;
-        const dMax = deposits.length ? Math.max(...deposits) : null;
+        const rentItems = allListings.filter(x => x.type === currentSubtype && x.gbn === '월세' && x.rent != null);
+        if (rentItems.length === 0) { box.innerHTML = '<div class="pr-empty">매물 없음</div>'; return; }
+        const minItem = rentItems.reduce((a, b) => a.rent <= b.rent ? a : b);
+        const maxItem = rentItems.reduce((a, b) => a.rent >= b.rent ? a : b);
         box.innerHTML = `
-          <div class="pr-row"><span class="pr-label">최저월세</span><span class="pr-val">${fmtMan(min)}</span></div>
-          <div class="pr-row"><span class="pr-label">최고월세</span><span class="pr-val">${fmtMan(max)}</span></div>
-          ${dMin != null ? `<div class="pr-row"><span class="pr-label">보증금</span><span class="pr-val">${fmtMan(dMin)}~${fmtMan(dMax)}</span></div>` : ''}
+          <div class="pr-row"><span class="pr-label">최저</span><span class="pr-val">${minItem.deposit != null ? fmtMan(minItem.deposit) + '/' : ''}월 ${fmtMan(minItem.rent)}</span></div>
+          <div class="pr-row"><span class="pr-label">최고</span><span class="pr-val">${maxItem.deposit != null ? fmtMan(maxItem.deposit) + '/' : ''}월 ${fmtMan(maxItem.rent)}</span></div>
         `;
         return;
       }
