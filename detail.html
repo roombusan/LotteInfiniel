@@ -674,58 +674,52 @@
       },
     };
 
-    // ── 구글 시트 매물 데이터 (동 → 층 → 매물 배열) ───────────
-    // dir: 스프레드시트의 방향 값 ('남동' or '남서')
-    const listingsData = {
-      101: {
-        1: [
-          { gbn: '매매', type: '59A', dir: '남서', bun: 49680, ext: 1760, prem: -700, jeonse: null, total: 50740 },
-          { gbn: '매매', type: '59A', dir: '남서', bun: 49680, ext: 1760, prem: 0, jeonse: null, total: 51440 },
-        ],
-        3: [{ gbn: '매매', type: '59A', dir: '남서', bun: 51170, ext: 1760, prem: 500, jeonse: null, total: 53430 }],
-        8: [{ gbn: '매매', type: '59A', dir: '남동', bun: 54150, ext: 1760, prem: 5000, jeonse: null, total: 60910 }],
-        10: [{ gbn: '매매+전세', type: '59A', dir: '남서', bun: 54850, ext: 1760, prem: 1000, jeonse: 35000, total: 57610 }],
-        13: [{ gbn: '매매', type: '59A', dir: '남동', bun: 55910, ext: 1760, prem: 1000, jeonse: null, total: 58670 }],
-        21: [{ gbn: '매매', type: '59A', dir: '남서', bun: 58710, ext: 1760, prem: 0, jeonse: null, total: 60470 }],
-      },
-      102: {
-        2: [
-          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
-          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
-          { gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: 1000, jeonse: null, total: 53180 },
-        ],
-        24: [{ gbn: '매매', type: '59A', dir: '남동', bun: 59760, ext: 1760, prem: 500, jeonse: null, total: 62020 }],
-      },
-      103: {
-        2: [{ gbn: '전세', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: null, jeonse: 35000, total: null }],
-      },
-      104: {
-        2: [{ gbn: '매매', type: '59A', dir: '남서', bun: 50420, ext: 1760, prem: 2000, jeonse: null, total: 54180 }],
-      },
-      105: {
-        11: [{ gbn: '전세', type: '59B', dir: '남동', bun: 54310, ext: 1760, prem: null, jeonse: 34000, total: null }],
-        18: [{ gbn: '매매', type: '59B', dir: '남동', bun: 56740, ext: 1760, prem: 2000, jeonse: null, total: 60500 }],
-      },
-      106: {
-        2: [{ gbn: '매매', type: '59A', dir: '남동', bun: 50420, ext: 1760, prem: -1000, jeonse: null, total: 51180 }],
-        5: [{ gbn: '반반', type: '59B', dir: '남동', bun: 51520, ext: 1760, prem: 200, jeonse: null, total: 53480 }],
-        16: [{ gbn: '전세', type: '59A', dir: '남동', bun: null, ext: null, prem: null, jeonse: 35000, total: null }],
-      },
-      107: {
-        1: [{ gbn: '매매+전세', type: '84', dir: '남동', bun: 67370, ext: 2180, prem: 1000, jeonse: 45000, total: 70550 }],
-        4: [{ gbn: '매매', type: '59B', dir: '남동', bun: 50930, ext: 2350, prem: 500, jeonse: null, total: 53780 }],
-        6: [{ gbn: '매매', type: '59B', dir: '남동', bun: 52010, ext: 1760, prem: 500, jeonse: null, total: 54270 }],
-        8: [{ gbn: '매매', type: '59B', dir: '남동', bun: 52990, ext: 1760, prem: 0, jeonse: null, total: 54750 }],
-        9: [{ gbn: '매매', type: '59B', dir: '남동', bun: 53480, ext: 1760, prem: 0, jeonse: null, total: 55240 }],
-        16: [{ gbn: '전세', type: '84', dir: '남동', bun: null, ext: null, prem: null, jeonse: 43000, total: null }],
-      },
-      108: {
-        12: [{ gbn: '매매', type: '59B', dir: '남동', bun: 54660, ext: 1760, prem: 2000, jeonse: null, total: 58420 }],
-        14: [{ gbn: '전세', type: '59B', dir: '남동', bun: 55360, ext: 1760, prem: null, jeonse: 34000, total: null }],
-        21: [{ gbn: '매매', type: '59B', dir: '남동', bun: 57770, ext: 1760, prem: 2000, jeonse: null, total: 61530 }],
-        23: [{ gbn: '매매', type: '59B', dir: '남동', bun: 58450, ext: 1760, prem: 1000, jeonse: null, total: 61210 }],
-      },
-    };
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4fD6cOg4-utmMUse3ZnG2umK2a6-k9xj6rj6Dda5AuhQ8w3eyzZqDtQyM58sLVHVTkoWDQI94UbDK/pub?output=csv';
+
+    function parseNum(s, zeroAsNull = false) {
+      if (s == null || s === '' || s === '#REF!') return null;
+      const n = parseInt(String(s).replace(/,/g, ''), 10);
+      if (isNaN(n)) return null;
+      if (zeroAsNull && n === 0) return null;
+      return n;
+    }
+
+    function buildListingsData(text) {
+      const lines = text.trim().split('\n');
+      const data = {};
+      for (let i = 1; i < lines.length; i++) {
+        const cols = [];
+        let cur = '', inQ = false;
+        for (const ch of lines[i]) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        if (cols.length < 9) continue;
+        const dongVal  = parseNum(cols[1]);
+        const floorVal = parseNum(cols[2]);
+        if (!dongVal || !floorVal) continue;
+        let gbn = cols[0];
+        if (gbn.includes('매매') && gbn.includes('전세')) gbn = '매매+전세';
+        const type = (cols[5] && cols[5] !== '#REF!') ? cols[5] : (cols[9] && cols[9] !== '#REF!' ? cols[9] : null);
+        if (!type) continue;
+        const dir = cols[10] ? cols[10].replace('향', '') : '';
+        if (!data[dongVal]) data[dongVal] = {};
+        if (!data[dongVal][floorVal]) data[dongVal][floorVal] = [];
+        data[dongVal][floorVal].push({
+          gbn, type, dir,
+          bun:    parseNum(cols[3]),
+          ext:    parseNum(cols[4]),
+          prem:   parseNum(cols[6]),
+          jeonse: parseNum(cols[7], true),
+          total:  parseNum(cols[8], true),
+        });
+      }
+      return data;
+    }
+
+    let listingsData = {};
 
     // ── 타입 배경 클래스 ──────────────────────────────────────
     const TYPE_CLASS = { '59A': 'type-59A', '59B': 'type-59B', '84': 'type-84' };
@@ -880,7 +874,16 @@
       }
     }
 
-    buildGrid();
+    (async function init() {
+      try {
+        const resp = await fetch(CSV_URL);
+        const text = await resp.text();
+        listingsData = buildListingsData(text);
+      } catch (e) {
+        console.error('데이터 로드 실패', e);
+      }
+      buildGrid();
+    })();
 
     // ── 필터 탭 이벤트 ───────────────────────────────────────
     document.querySelectorAll('#filter-bar .f-tab').forEach(tab => {
