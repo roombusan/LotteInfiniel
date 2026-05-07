@@ -242,10 +242,40 @@
       padding: 2px 1px;
     }
 
+    td.listing-sale-rent {
+      background: linear-gradient(to right, #5B4ED8 50%, #E07D3C 50%) !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
+    td.listing-lease-rent {
+      background: linear-gradient(to right, #2E9B87 50%, #E07D3C 50%) !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
+    td.listing-all {
+      background: linear-gradient(to right, #5B4ED8 33.33%, #2E9B87 33.33%, #2E9B87 66.66%, #E07D3C 66.66%) !important;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      height: auto;
+      padding: 2px 1px;
+    }
+
     td.listing-sale:active,
     td.listing-lease:active,
     td.listing-mixed:active,
-    td.listing-rent:active {
+    td.listing-rent:active,
+    td.listing-sale-rent:active,
+    td.listing-lease-rent:active,
+    td.listing-all:active {
       opacity: 0.75;
     }
 
@@ -940,8 +970,18 @@
               gbnLabel  = '전세';
               priceItem = filtered.find(i => i.jeonse) || filtered[0];
               priceText = filtered.length > 1 ? filtered.length + '건' : fmtShort(priceItem.jeonse);
-            } else if (hasRent) {
-              cellClass = 'listing-rent';
+            } else if (hasSale && hasLease && hasRent) {
+              cellClass = 'listing-all';
+              gbnLabel  = filtered.length + '건';
+              priceItem = filtered[0];
+              priceText = '';
+            } else if (hasSale && hasRent) {
+              cellClass = 'listing-sale-rent';
+              gbnLabel  = filtered.length + '건';
+              priceItem = filtered[0];
+              priceText = '';
+            } else if (hasLease && hasRent) {
+              cellClass = 'listing-lease-rent';
               gbnLabel  = filtered.length + '건';
               priceItem = filtered[0];
               priceText = '';
