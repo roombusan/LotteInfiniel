@@ -798,6 +798,18 @@
       return n;
     }
 
+    function parseManWon(s) {
+      if (!s || s.trim() === '') return null;
+      s = String(s).replace(/,/g, '').trim();
+      if (s.includes('억')) {
+        const m = s.match(/^(\d+)억(\d+)?/);
+        if (!m) return null;
+        return parseInt(m[1]) * 10000 + (m[2] ? parseInt(m[2]) : 0);
+      }
+      const n = parseInt(s);
+      return isNaN(n) ? null : n;
+    }
+
     function parseCSV(text) {
       const lines = text.trim().split('\n');
       const rows = [];
@@ -811,12 +823,24 @@
         }
         cols.push(cur.trim());
         if (cols.length < 9) continue;
-        if (!parseNum(cols[1]) || !parseNum(cols[2])) continue;
-        let gbn = cols[0];
+        const dongVal = parseNum(String(cols[1]).replace(/동$/, '').trim());
+        if (!dongVal) continue;
+        const isWolse = cols[0].trim() === '월세';
+        if (!isWolse && !parseNum(cols[2])) continue;
+        let gbn = cols[0].trim();
         if (gbn.includes('매매') && gbn.includes('전세')) gbn = '매매+전세';
         const type = (cols[5] && cols[5] !== '#REF!') ? cols[5] : (cols[9] && cols[9] !== '#REF!' ? cols[9] : null);
         if (!type) continue;
-        rows.push({ gbn, type, total: parseNum(cols[8], true), jeonse: parseNum(cols[7], true) });
+        const amtRaw = cols[7] ? cols[7].trim() : '';
+        let jeonse = null, deposit = null, rent = null;
+        if (isWolse) {
+          const parts = amtRaw.split('/');
+          deposit = parseManWon(parts[0]);
+          rent    = parseNum(parts[1]);
+        } else {
+          jeonse = parseNum(amtRaw, true);
+        }
+        rows.push({ gbn, type, total: parseNum(cols[8], true), jeonse, deposit, rent });
       }
       return rows;
     }
@@ -832,20 +856,19 @@
     function updatePriceRange() {
       const box = document.getElementById('priceRange');
 
-      if (currentTxn === 'rent') {
-        box.innerHTML = '<div class="pr-empty">매물 준비 중</div>';
-        return;
-      }
-
       let prices = [];
       if (currentTxn === 'sale') {
         prices = allListings
           .filter(x => x.type === currentSubtype && (x.gbn.includes('매매') || x.gbn === '반반') && x.total != null)
           .map(x => x.total);
-      } else {
+      } else if (currentTxn === 'lease') {
         prices = allListings
           .filter(x => x.type === currentSubtype && x.jeonse != null)
           .map(x => x.jeonse);
+      } else {
+        prices = allListings
+          .filter(x => x.type === currentSubtype && x.gbn === '월세' && x.rent != null)
+          .map(x => x.rent);
       }
 
       if (prices.length === 0) {
@@ -855,13 +878,15 @@
 
       const min = Math.min(...prices);
       const max = Math.max(...prices);
+      const minLabel = currentTxn === 'rent' ? '최저월세' : '최저가';
+      const maxLabel = currentTxn === 'rent' ? '최고월세' : '최고가';
       box.innerHTML = `
         <div class="pr-row">
-          <span class="pr-label">최저가</span>
+          <span class="pr-label">${minLabel}</span>
           <span class="pr-val">${fmtMan(min)}</span>
         </div>
         <div class="pr-row">
-          <span class="pr-label">최고가</span>
+          <span class="pr-label">${maxLabel}</span>
           <span class="pr-val">${fmtMan(max)}</span>
         </div>
       `;
